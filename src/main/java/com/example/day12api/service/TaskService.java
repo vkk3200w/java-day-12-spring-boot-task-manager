@@ -1,5 +1,6 @@
 package com.example.day12api.service;
 
+import com.example.day12api.exception.TaskNotFoundException;
 import com.example.day12api.model.Task;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,8 @@ public class TaskService {
 
     public Task createTask(Task task) {
         Long id = idGenerator.getAndIncrement();
-
         task.setId(id);
         tasks.put(id, task);
-
         return task;
     }
 
@@ -30,21 +29,27 @@ public class TaskService {
     }
 
     public Task getTaskById(Long id) {
-        return tasks.get(id);
+        Task task = tasks.get(id);
+
+        if (task == null) {
+            throw new TaskNotFoundException(id);
+        }
+
+        return task;
     }
 
     public Task updateTask(Long id, Task updatedTask) {
-        if (!tasks.containsKey(id)) {
-            return null;
-        }
+        Task existingTask = getTaskById(id);
 
-        updatedTask.setId(id);
-        tasks.put(id, updatedTask);
+        existingTask.setTitle(updatedTask.getTitle());
+        existingTask.setDescription(updatedTask.getDescription());
+        existingTask.setCompleted(updatedTask.isCompleted());
 
-        return updatedTask;
+        return existingTask;
     }
 
-    public boolean deleteTask(Long id) {
-        return tasks.remove(id) != null;
+    public void deleteTask(Long id) {
+        getTaskById(id);
+        tasks.remove(id);
     }
 }
