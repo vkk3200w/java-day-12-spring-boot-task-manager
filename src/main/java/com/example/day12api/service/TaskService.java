@@ -1,43 +1,41 @@
+
 package com.example.day12api.service;
 
 import com.example.day12api.exception.TaskNotFoundException;
 import com.example.day12api.model.Task;
+import com.example.day12api.repository.TaskRepository;
+
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TaskService {
 
-    private final ConcurrentHashMap<Long, Task> tasks =
-            new ConcurrentHashMap<>();
+    private final TaskRepository taskRepository;
 
-    private final AtomicLong idGenerator = new AtomicLong(1);
+    // Constructor Dependency Injection
+    public TaskService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
+    // CREATE
     public Task createTask(Task task) {
-        Long id = idGenerator.getAndIncrement();
-        task.setId(id);
-        tasks.put(id, task);
-        return task;
+        return taskRepository.save(task);
     }
 
+    // READ ALL
     public List<Task> getAllTasks() {
-        return new ArrayList<>(tasks.values());
+        return taskRepository.findAll();
     }
 
+    // READ BY ID
     public Task getTaskById(Long id) {
-        Task task = tasks.get(id);
-
-        if (task == null) {
-            throw new TaskNotFoundException(id);
-        }
-
-        return task;
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException(id));
     }
 
+    // UPDATE
     public Task updateTask(Long id, Task updatedTask) {
         Task existingTask = getTaskById(id);
 
@@ -45,11 +43,12 @@ public class TaskService {
         existingTask.setDescription(updatedTask.getDescription());
         existingTask.setCompleted(updatedTask.isCompleted());
 
-        return existingTask;
+        return taskRepository.save(existingTask);
     }
 
+    // DELETE
     public void deleteTask(Long id) {
-        getTaskById(id);
-        tasks.remove(id);
+        Task existingTask = getTaskById(id);
+        taskRepository.delete(existingTask);
     }
 }
